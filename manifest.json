@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Instagram Follower Remover",
+  "version": "1.0.0",
+  "description": "Instagram-ийн дагагчдыг (followers) аюулгүй, хурд хязгаартайгаар бөөнөөр устгах туслах хэрэгсэл.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["https://www.instagram.com/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Instagram Follower Remover"
+  },
+  "icons": {
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.instagram.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="popup.css" />
+  <title>Follower Remover</title>
+</head>
+<body>
+  <div class="header">Instagram Follower Remover</div>
+  <div class="content">
+    <p id="not-instagram" class="warn hidden">
+      Энэ хэрэгсэл зөвхөн <b>instagram.com</b> дээр ажиллана. Эхлээд Instagram-аа нээнэ үү.
+    </p>
+
+    <div id="controls">
+      <label>Хэдэн дагагч устгах уу? (0 = бүгд)
+        <input type="number" id="limit" min="0" value="0" />
+      </label>
+      <label>Хүлээлт (сек)
+        <span class="row">
+          <input type="number" id="min" min="2" value="4" placeholder="бага" />
+          <input type="number" id="max" min="2" value="7" placeholder="их" />
+        </span>
+      </label>
+
+      <div class="status" id="status">Бэлэн.</div>
+
+      <div class="actions">
+        <button id="start" class="primary">Эхлэх</button>
+        <button id="stop" class="danger" disabled>Зогсоох</button>
+      </div>
+      <button id="toggle" class="ghost">Самбарыг харуулах / нуух</button>
+
+      <p class="hint">
+        1. Instagram профайлаа нээ.<br />
+        2. "Followers" дарж жагсаалтыг нээ.<br />
+        3. "Эхлэх" дар.
+      </p>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
