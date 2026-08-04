@@ -27,8 +27,70 @@
   const REMOVE_LABELS = ['remove', 'устгах', 'удалить', 'quitar', 'entfernen', 'supprimer'];
   const CONFIRM_LABELS = ['remove', 'устгах', 'удалить', 'quitar', 'entfernen', 'supprimer'];
 
-  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+  // ---- Background-д ажиллах туслахууд ---------------------------------
+  // Chrome нь идэвхгүй (hidden) таб дээр setTimeout-г удаашруулдаг тул
+  // цагийг Web Worker дотор тоолуулж, throttling-ыг тойрно.
+  let timerWorker = null;
+  function getTimerWorker() {
+    if (timerWorker) return timerWorker;
+    try {
+      const code =
+        'self.onmessage=function(e){setTimeout(function(){self.postMessage(e.data.id);},e.data.ms);};';
+      const blob = new Blob([code], { type: 'application/javascript' });
+      timerWorker = new Worker(URL.createObjectURL(blob));
+    } catch (e) {
+      timerWorker = null;
+    }
+    return timerWorker;
+  }
+
+  function sleep(ms) {
+    const w = getTimerWorker();
+    if (!w) return new Promise((r) => setTimeout(r, ms)); // fallback
+    return new Promise((resolve) => {
+      const id = Math.random().toString(36).slice(2);
+      const handler = (e) => {
+        if (e.data === id) {
+          w.removeEventListener('message', handler);
+          resolve();
+        }
+      };
+      w.addEventListener('message', handler);
+      w.postMessage({ id, ms });
+    });
+  }
+
+  // Чимээгүй аудио тоглуулж таб-ыг "идэвхтэй" байлгаснаар Chrome-ийн
+  // intensive throttling-оос сэргийлнэ (таб нуугдсан ч timer зөв ажиллана).
+  let keepAlive = { ctx: null, osc: null };
+  function startKeepAlive() {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      const ctx = new Ctx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      gain.gain.value = 0; // бүрэн чимээгүй
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      if (ctx.state === 'suspended') ctx.resume();
+      keepAlive = { ctx, osc };
+    } catch (e) {
+      /* дэмжигдээгүй бол алгасах */
+    }
+  }
+  function stopKeepAlive() {
+    try {
+      if (keepAlive.osc) keepAlive.osc.stop();
+      if (keepAlive.ctx) keepAlive.ctx.close();
+    } catch (e) {
+      /* noop */
+    }
+    keepAlive = { ctx: null, osc: null };
+  }
 
   const normalize = (s) => (s || '').trim().toLowerCase();
 
@@ -255,13 +317,15 @@
     state.running = true;
     state.stopRequested = false;
     state.removed = 0;
+    startKeepAlive(); // "Эхлэх" дарсан нь user gesture тул аудио эхлэх боломжтой
     updatePanel();
-    notify('▶️ Эхэллээ…');
+    notify('▶️ Эхэллээ… (өөр таб руу орсон ч үргэлжилнэ)');
     run();
   }
 
   function stop() {
     state.running = false;
+    stopKeepAlive();
     updatePanel();
     chrome.runtime.sendMessage({ type: 'stopped', removed: state.removed }).catch(() => {});
   }
